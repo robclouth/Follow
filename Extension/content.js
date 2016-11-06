@@ -1,6 +1,7 @@
 var extensionId = "mkcklmkocgdkacinopkjdecfmbojiapa";
 
 var cursorsOnPage = {};
+var docWidth = $(document).width(), docHeight = $(document).height();
 
 function onCursorEnter(data) {
     var $cursorElem = $('<div id="cursor-' + data.clientId + '" class="cursor"/>');
@@ -22,8 +23,8 @@ function onCursorMove(data) {
     var $cursorElem = cursorsOnPage[data.clientId];
     if ($cursorElem) {
         $cursorElem.offset({
-            top: data.y,
-            left: data.x
+            top: data.y * docHeight,
+            left: data.x * docWidth
         });
     }
     console.log('onCursorMove');
@@ -42,15 +43,20 @@ chrome.runtime.onMessage.addListener(function (msg) {
         onCursorMove(msg.data);
 });
 
-document.onmousemove = function (e) {
+$(document).mousemove(function (e) {
     port.postMessage({
         type: 'cursorMove',
         data: {
-            x: e.pageX,
-            y: e.pageY
+            x: e.pageX / docWidth,
+            y: e.pageY / docHeight
         }
     });
-};
+});
+
+$(window).resize(function() {
+    docWidth = $(document).width();
+    docHeight = $(document).height();
+});
 
 port.postMessage({
     type: 'mouseEnter',
