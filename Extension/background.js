@@ -1,10 +1,7 @@
 var socket = io.connect('http://localhost:3000');
-var port;
 
 chrome.runtime.onConnect.addListener(function (newPort) {
     console.assert(newPort.name == 'follow');
-
-    port = newPort;
 
     port.onMessage.addListener(function (msg) {
         socket.emit(msg.type, msg.data);
@@ -29,28 +26,27 @@ chrome.tabs.getSelected(null, function (tab) {
     socket.emit('urlChange', tab.url);
 });
 
-function sendToTabs(url, type, data) {
-    chrome.tabs.query({
-        url: url,
-        currentWindow: true
-    }, function (tabs) {
-        for (var i in tabs) {
-            chrome.tabs.sendMessage(tabs[i].id, {
-                type: type,
-                data: data
-            }, function (response) {});
-        }
+function sendToCurrentTab(type, data) {
+    chrome.tabs.getSelected(null, function (tab) {
+        chrome.tabs.sendMessage(tab.id, {
+            type: type,
+            data: data
+        }, function (response) {});
     });
 }
 
 socket.on('cursorEnter', function (data) {
-    sendToTabs(data.toUrl, 'cursorEnter', data);
+    sendToCurrentTab('cursorEnter', data);
 });
 
 socket.on('cursorLeave', function (data) {
-    sendToTabs(data.fromUrl, 'cursorLeave', data);
+    sendToCurrentTab('cursorLeave', data);
+});
+
+socket.on('clientDisconnect', function (data) {
+    sendToCurrentTab('cursorLeave', data);
 });
 
 socket.on('cursorMove', function (data) {
-    sendToTabs(data.url, 'cursorMove', data);
+    sendToCurrentTab('cursorMove', data);
 });

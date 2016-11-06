@@ -27,6 +27,8 @@ io.on('connection', function (client) {
             toUrl: newUrl
         });
 
+        client.leave(client.url);
+
         client.join(newUrl);
 
         io.to(newUrl).emit('cursorEnter', {
