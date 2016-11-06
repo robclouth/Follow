@@ -2,6 +2,9 @@ var extensionId = "hdkccnbnblofabgpalliknpjhcpphckc";
 
 var cursorsOnPage = {};
 var docWidth = $(document).width(), docHeight = $(document).height();
+var selectorGen = new CssSelectorGenerator();
+var $prevMouseTarget = null;
+var targetWidth = 0, targetHeight = 0;
 
 var lastData;
 
@@ -12,13 +15,16 @@ function onCursorEnter(data) {
         top: data.y || 0,
         left: data.x || 0
     });
-    cursorsOnPage[data.clientId] = $cursorElem;
+    cursorsOnPage[data.clientId] = {
+        cursorElem: $cursorElem,
+        overElem: data.relElemSel
+    };
     $('body').append($cursorElem);
     console.log('onCursorEnter');
 }
 
 function onCursorLeave(data) {
-    var $cursorElem = cursorsOnPage[data.clientId];
+    var $cursorElem = cursorsOnPage[data.clientId].cursorElem;
     if ($cursorElem) {
         $cursorElem.addClass("leave-start");
         setTimeout(function() {
@@ -35,12 +41,29 @@ function onCursorLeave(data) {
 }
 
 function onCursorMove(data) {
-    var $cursorElem = cursorsOnPage[data.clientId];
-    if ($cursorElem) {
-        $cursorElem.offset({
-            top: data.y * docHeight + 20,
-            left: data.x * docWidth
-        });
+    var cursor = cursorsOnPage[data.clientId];
+    
+    if (cursor) {
+        var $cursorElem = cursor.cursorElem;
+        if(data.relElemSel){
+            var $relElemLocal = $(data.relElemSel);
+            cursor.overElem = $relElemLocal;
+            
+            var offset = $relElemLocal.offset();
+            cursor.overElemBounds = {
+                x: offset.left,
+                y: offset.top,
+                width: $relElemLocal.width(),
+                height: $relElemLocal.height()
+            };
+        }
+
+        if(cursor.overElemBounds){
+            $cursorElem.offset({
+                top: data.y * cursor.overElemBounds.height + cursor.overElemBounds.y,
+                left: data.x * cursor.overElemBounds.width + cursor.overElemBounds.x,
+            });
+        }
     } else {
         onCursorEnter(data);
     }
@@ -65,11 +88,32 @@ chrome.runtime.onMessage.addListener(function (msg) {
 });
 
 $(document).mousemove(function (e) {
+    var selector = null;
+
+    var $target = $(e.target);
+    var changed = false;
+
+    if(!$target.is($prevMouseTarget)){
+        selector = selectorGen.getSelector($target[0]);
+        $prevMouseTarget = $target;
+        targetWidth = $target.width();
+        targetHeight = $target.height();
+        changed = true;
+    }
+
+    var offset = $target.offset(); 
+    var relX = (e.pageX - offset.left) / targetWidth;
+    var relY = (e.pageY - offset.top) / targetHeight;
+   
     port.postMessage({
         type: 'cursorMove',
-        data: {
-            x: e.pageX / docWidth,
-            y: e.pageY / docHeight
+        data: changed? {
+            relElemSel: selector,
+            x: relX,
+            y: relY,
+        }: {
+            x: relX,
+            y: relY,
         }
     });
 });

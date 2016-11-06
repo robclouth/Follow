@@ -21,6 +21,7 @@
         ],
         "css": ["follow.css"],
         "js": [
+            "css-selector-generator.min.js",
             "jquery-3.1.1.min.js",
             "content.js"
         ],
