@@ -15,7 +15,8 @@ io.on('connection', function (client) {
             clientId: client.id,
             x: data.x,
             y: data.y,
-            url: client.url
+            url: client.url,
+            relElemSel: data.relElemSel
         });
         console.log('cursorMove:' + JSON.stringify(data));
     });
