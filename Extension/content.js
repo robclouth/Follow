@@ -1,10 +1,14 @@
-var extensionId = "mkcklmkocgdkacinopkjdecfmbojiapa";
+var extensionId = "hdkccnbnblofabgpalliknpjhcpphckc";
 
 var cursorsOnPage = {};
 var docWidth = $(document).width(), docHeight = $(document).height();
 
 function onCursorEnter(data) {
     var $cursorElem = $('<div id="cursor-' + data.clientId + '" class="cursor"/>');
+    $cursorElem.offset({
+        top: data.y || 0,
+        left: data.x || 0
+    });
     cursorsOnPage[data.clientId] = $cursorElem;
     $('body').append($cursorElem);
     console.log('onCursorEnter');
@@ -16,7 +20,7 @@ function onCursorLeave(data) {
         $cursorElem.remove();
         delete cursorsOnPage[data.clientId];
     }
-    console.log('onCursorEnter');
+    console.log('onCursorLeave');
 }
 
 function onCursorMove(data) {
@@ -26,6 +30,8 @@ function onCursorMove(data) {
             top: data.y * docHeight,
             left: data.x * docWidth
         });
+    } else {
+        onCursorEnter(data);
     }
     console.log('onCursorMove');
 }
