@@ -3,7 +3,10 @@ var extensionId = "hdkccnbnblofabgpalliknpjhcpphckc";
 var cursorsOnPage = {};
 var docWidth = $(document).width(), docHeight = $(document).height();
 
+var lastData;
+
 function onCursorEnter(data) {
+    lastData = data;
     var $cursorElem = $('<div id="cursor-' + data.clientId + '" class="cursor"/>');
     $cursorElem.offset({
         top: data.y || 0,
@@ -17,7 +20,15 @@ function onCursorEnter(data) {
 function onCursorLeave(data) {
     var $cursorElem = cursorsOnPage[data.clientId];
     if ($cursorElem) {
-        $cursorElem.remove();
+        $cursorElem.addClass("leave-start");
+        setTimeout(function() {
+            $cursorElem.removeClass("leave-start");
+            $cursorElem.addClass("leave-end");
+        }, 5000);
+        setTimeout(function() {
+            $cursorElem.remove();
+        }, 7000);
+        
         delete cursorsOnPage[data.clientId];
     }
     console.log('onCursorLeave');
@@ -27,7 +38,7 @@ function onCursorMove(data) {
     var $cursorElem = cursorsOnPage[data.clientId];
     if ($cursorElem) {
         $cursorElem.offset({
-            top: data.y * docHeight,
+            top: data.y * docHeight + 20,
             left: data.x * docWidth
         });
     } else {
@@ -35,6 +46,10 @@ function onCursorMove(data) {
     }
     console.log('onCursorMove');
 }
+
+$(document).on("click", function () {
+    onCursorLeave(lastData);
+});
 
 var port = chrome.runtime.connect(extensionId, {
     name: 'follow'

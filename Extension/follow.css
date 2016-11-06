@@ -1,6 +1,19 @@
 .cursor {
     position: absolute;
-    width: 10px;
-    height: 10px;
-    background: red;
+    width: 15px;
+    height: 15px;
+    background: steelblue;
+    pointer-events: none;
+    border-radius: 50%;
+    opacity: 0.7;
+    transform: scale(1,1);
+    transition: transform 1s ease;
+}
+
+.cursor.leave-start {
+    transform: scale(3,3);
+}
+
+.cursor.leave-end {
+    transform: scale(0,0);
 }
