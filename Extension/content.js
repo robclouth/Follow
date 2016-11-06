@@ -1,9 +1,13 @@
-var extensionId = "mkcklmkocgdkacinopkjdecfmbojiapa";
+var extensionId = "hdkccnbnblofabgpalliknpjhcpphckc";
 
 var cursorsOnPage = {};
 
 function onCursorEnter(data) {
     var $cursorElem = $('<div id="cursor-' + data.clientId + '" class="cursor"/>');
+    $cursorElem.offset({
+        top: data.y || 0,
+        left: data.x || 0
+    });
     cursorsOnPage[data.clientId] = $cursorElem;
     $('body').append($cursorElem);
     console.log('onCursorEnter');
@@ -15,7 +19,7 @@ function onCursorLeave(data) {
         $cursorElem.remove();
         delete cursorsOnPage[data.clientId];
     }
-    console.log('onCursorEnter');
+    console.log('onCursorLeave');
 }
 
 function onCursorMove(data) {
@@ -25,6 +29,8 @@ function onCursorMove(data) {
             top: data.y,
             left: data.x
         });
+    } else {
+        onCursorEnter(data);
     }
     console.log('onCursorMove');
 }
