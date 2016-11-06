@@ -6,6 +6,7 @@ function onCursorEnter(data) {
     var $cursorElem = $('<div id="cursor-' + data.clientId + '" class="cursor"/>');
     cursorsOnPage[data.clientId] = $cursorElem;
     $('body').append($cursorElem);
+    console.log('onCursorEnter');
 }
 
 function onCursorLeave(data) {
@@ -14,6 +15,7 @@ function onCursorLeave(data) {
         $cursorElem.remove();
         delete cursorsOnPage[data.clientId];
     }
+    console.log('onCursorEnter');
 }
 
 function onCursorMove(data) {
@@ -24,10 +26,11 @@ function onCursorMove(data) {
             left: data.x
         });
     }
+    console.log('onCursorMove');
 }
 
 var port = chrome.runtime.connect(extensionId, {
-    name: "follow"
+    name: 'follow'
 });
 
 chrome.runtime.onMessage.addListener(function (msg) {
