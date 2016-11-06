@@ -26,6 +26,6 @@
         ],
         "run_at": "document_end"
     }],
-    "web_accessible_resources": ["follow.js"],
+    "web_accessible_resources": ["follow.js", "pointer.png"],
     "manifest_version": 2
 }
