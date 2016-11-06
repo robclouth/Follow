@@ -17,7 +17,7 @@ io.on('connection', function (client) {
             y: data.y,
             url: client.url
         });
-        console.log('cursorMove:' + data);
+        console.log('cursorMove:' + JSON.stringify(data));
     });
 
     client.on('urlChange', function (newUrl) {

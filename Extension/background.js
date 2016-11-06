@@ -1,4 +1,5 @@
 var socket = io.connect('http://localhost:3000');
+var currUrl = null;
 
 chrome.runtime.onConnect.addListener(function (port) {
     console.assert(port.name == 'follow');
@@ -9,25 +10,37 @@ chrome.runtime.onConnect.addListener(function (port) {
 });
 
 chrome.tabs.onCreated.addListener(function (tab) {
-    socket.emit('urlChange', tab.url);
+    changeUrl(tab.url);
 });
 
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-    socket.emit('urlChange', tab.url);
+    changeUrl(tab.url);
 });
 
 chrome.tabs.onActivated.addListener(function () {
     chrome.tabs.getSelected(null, function (tab) {
-        socket.emit('urlChange', tab.url);
+        changeUrl(tab.url);
     });
 });
 
 chrome.tabs.getSelected(null, function (tab) {
-    socket.emit('urlChange', tab.url);
+    changeUrl(tab.url);
 });
+
+function changeUrl(newUrl){
+    //remove parameters
+    newUrl =  newUrl.split('?')[0];
+
+    if(newUrl !== currUrl){
+        socket.emit('urlChange', newUrl);
+        currUrl = newUrl;
+    }
+}
 
 function sendToCurrentTab(type, data) {
     chrome.tabs.getSelected(null, function (tab) {
+        if(tab.id < 0)
+            return;
         chrome.tabs.sendMessage(tab.id, {
             type: type,
             data: data
