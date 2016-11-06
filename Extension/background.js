@@ -1,7 +1,7 @@
 var socket = io.connect('http://localhost:3000');
 
-chrome.runtime.onConnect.addListener(function (newPort) {
-    console.assert(newPort.name == 'follow');
+chrome.runtime.onConnect.addListener(function (port) {
+    console.assert(port.name == 'follow');
 
     port.onMessage.addListener(function (msg) {
         socket.emit(msg.type, msg.data);
