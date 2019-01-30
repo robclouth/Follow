@@ -1,4 +1,4 @@
-var extensionId = "hdkccnbnblofabgpalliknpjhcpphckc";
+var extensionId = "mkcklmkocgdkacinopkjdecfmbojiapa";
 
 var cursorsOnPage = {};
 var docWidth = $(document).width(), docHeight = $(document).height();
