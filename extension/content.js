@@ -1,140 +1,116 @@
-var extensionId = "mkcklmkocgdkacinopkjdecfmbojiapa";
+let cursorsOnPage = {};
+let docWidth = $(document).width(),
+  docHeight = $(document).height();
+let lastData;
 
-var cursorsOnPage = {};
-var docWidth = $(document).width(), docHeight = $(document).height();
-var selectorGen = new CssSelectorGenerator();
-var $prevMouseTarget = null;
-var targetWidth = 0, targetHeight = 0;
+const port = chrome.runtime.connect({
+  name: "follow"
+});
 
-var lastData;
+chrome.runtime.onMessage.addListener(function(msg) {
+  if (msg.type == "cursorEnter") onCursorEnter(msg.data);
+  else if (msg.type == "cursorLeave") onCursorLeave(msg.data);
+  else if (msg.type == "cursorMove") onCursorMove(msg.data);
+});
+
+function throttle(func, wait, options) {
+  let context, args, result;
+  let timeout = null;
+  let previous = 0;
+  if (!options) options = {};
+  const later = function() {
+    previous = options.leading === false ? 0 : Date.now();
+    timeout = null;
+    result = func.apply(context, args);
+    if (!timeout) context = args = null;
+  };
+  return function() {
+    const now = Date.now();
+    if (!previous && options.leading === false) previous = now;
+    const remaining = wait - (now - previous);
+    context = this;
+    args = arguments;
+    if (remaining <= 0 || remaining > wait) {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      previous = now;
+      result = func.apply(context, args);
+      if (!timeout) context = args = null;
+    } else if (!timeout && options.trailing !== false) {
+      timeout = setTimeout(later, remaining);
+    }
+    return result;
+  };
+}
+
+$(document).mousemove(
+  throttle(function(e) {
+    port.postMessage({
+      type: "cursorMove",
+      data: {
+        x: e.pageX,
+        y: e.pageY
+      }
+    });
+  }, 100)
+);
+
+$(window).resize(function() {
+  docWidth = $(document).width();
+  docHeight = $(document).height();
+});
 
 function onCursorEnter(data) {
-    lastData = data;
-    var $cursorElem = $('<div id="cursor-' + data.clientId + '" class="cursor"/>');
-    $cursorElem.offset({
-        top: data.y || 0,
-        left: data.x || 0
-    });
+  let $cursorElem;
+  if (data.clientId in cursorsOnPage) {
+    const cursor = cursorsOnPage[data.clientId];
+    $cursorElem = cursor.$cursorElem;
+  } else {
+    $cursorElem = $(`<div id="cursor-${data.clientId}" class="cursor"/>`);
+    $("body").append($cursorElem);
     cursorsOnPage[data.clientId] = {
-        cursorElem: $cursorElem,
-        overElem: data.relElemSel
+      $cursorElem: $cursorElem
     };
-    $('body').append($cursorElem);
-    console.log('onCursorEnter');
+  }
+
+  $cursorElem.offset({
+    left: data.x || 0,
+    top: data.y || 0
+  });
+
+  lastData = data;
+  console.log("onCursorEnter");
 }
 
 function onCursorLeave(data) {
-    var $cursorElem = cursorsOnPage[data.clientId].cursorElem;
-    if ($cursorElem) {
-        $cursorElem.addClass("leave-start");
-        setTimeout(function() {
-            $cursorElem.removeClass("leave-start");
-            $cursorElem.addClass("leave-end");
-        }, 5000);
-        setTimeout(function() {
-            $cursorElem.remove();
-        }, 7000);
-        
-        delete cursorsOnPage[data.clientId];
-    }
-    console.log('onCursorLeave');
+  const $cursorElem = cursorsOnPage[data.clientId].$cursorElem;
+  if ($cursorElem) {
+    $cursorElem.addClass("leave-start");
+    setTimeout(function() {
+      $cursorElem.removeClass("leave-start");
+      $cursorElem.addClass("leave-end");
+    }, 5000);
+    setTimeout(function() {
+      $cursorElem.remove();
+    }, 7000);
+
+    delete cursorsOnPage[data.clientId];
+  }
+  console.log("onCursorLeave");
 }
 
 function onCursorMove(data) {
-    var cursor = cursorsOnPage[data.clientId];
-    
-    if (cursor) {
-        var $cursorElem = cursor.cursorElem;
-        if(data.relElemSel){
-            var $relElemLocal = $(data.relElemSel);
-            cursor.overElem = $relElemLocal;
-            
-            var offset = $relElemLocal.offset();
-            cursor.overElemBounds = {
-                x: offset.left,
-                y: offset.top,
-                width: $relElemLocal.width(),
-                height: $relElemLocal.height()
-            };
-        }
+  const cursor = cursorsOnPage[data.clientId];
 
-        if(cursor.overElemBounds){
-            $cursorElem.offset({
-                top: data.y * cursor.overElemBounds.height + cursor.overElemBounds.y,
-                left: data.x * cursor.overElemBounds.width + cursor.overElemBounds.x,
-            });
-        }
-    } else {
-        onCursorEnter(data);
-    }
-    console.log('onCursorMove');
+  if (!cursor) onCursorEnter(data);
+  const $cursorElem = cursor.$cursorElem;
+
+  $cursorElem.offset({
+    left: data.x,
+    top: data.y
+  });
+
+  console.log("onCursorMove");
 }
-
-$(document).on("click", function () {
-    onCursorLeave(lastData);
-});
-
-var port = chrome.runtime.connect(extensionId, {
-    name: 'follow'
-});
-
-chrome.runtime.onMessage.addListener(function (msg) {
-    if (msg.type == 'cursorEnter')
-        onCursorEnter(msg.data);
-    else if (msg.type == 'cursorLeave')
-        onCursorLeave(msg.data);
-    else if (msg.type == 'cursorMove')
-        onCursorMove(msg.data);
-});
-
-$(document).mousemove(function (e) {
-    var selector = null;
-
-    var $target = $(e.target);
-    var changed = false;
-
-    if(!$target.is($prevMouseTarget)){
-        selector = selectorGen.getSelector($target[0]);
-        $prevMouseTarget = $target;
-        targetWidth = $target.width();
-        targetHeight = $target.height();
-        changed = true;
-    }
-
-    var offset = $target.offset(); 
-    var relX = (e.pageX - offset.left) / targetWidth;
-    var relY = (e.pageY - offset.top) / targetHeight;
-   
-    port.postMessage({
-        type: 'cursorMove',
-        data: changed? {
-            relElemSel: selector,
-            x: relX,
-            y: relY,
-        }: {
-            x: relX,
-            y: relY,
-        }
-    });
-});
-
-$(window).resize(function() {
-    docWidth = $(document).width();
-    docHeight = $(document).height();
-});
-
-port.postMessage({
-    type: 'mouseEnter',
-    data: {
-        url: document.location.href
-    }
-});
-
-
-
-// var s = document.createElement('script');
-// s.src = chrome.extension.getURL('follow.js');
-// s.onload = function() {
-//     this.remove();
-// };
-// (document.head || document.documentElement).appendChild(s);
